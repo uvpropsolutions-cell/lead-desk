@@ -1,0 +1,818 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b3772">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lead Desk">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>GPSS Lead Desk</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one narrow working column; sticky tab bar; finder cards in a wrapping grid; pipeline as stacked lead rows. */
+:root{
+  --bg:#f3f6fb; --surface:#ffffff; --fg:#13203a; --muted:#56668361; --muted-text:#566683;
+  --line:#d8e0ee; --navy:#0b3772; --green:#168a5c; --orange:#d9690a; --tint:#e8eef9; --danger:#b3261e;
+  --font-display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --font-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0b1322; --surface:#121c31; --fg:#e6edfb; --muted-text:#97a7c4; --line:#233250;
+  --navy:#7fb0ff; --green:#4cc593; --orange:#ff9a45; --tint:#1a2946; --danger:#ff8a80; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0b1322; --surface:#121c31; --fg:#e6edfb; --muted-text:#97a7c4; --line:#233250;
+  --navy:#7fb0ff; --green:#4cc593; --orange:#ff9a45; --tint:#1a2946; --danger:#ff8a80; color-scheme:dark}
+
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.5;
+  padding-block:0 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:860px;margin:0 auto}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;line-height:1.15}
+h1{font-size:1.7rem;font-weight:800;letter-spacing:-.01em}
+h2{font-size:1.25rem;font-weight:800}
+h3{font-size:1rem;font-weight:600}
+p{margin:0}
+a{color:var(--navy)}
+.muted{color:var(--muted-text)}
+.mono{font-family:var(--font-mono)}
+.label{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-text);font-weight:600}
+
+header{padding-top:calc(20px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:6px}
+header .sub{color:var(--muted-text);max-width:60ch}
+.store{font-family:var(--font-mono);font-size:.72rem;color:var(--muted-text)}
+
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:6px;padding:12px 0;overflow-x:auto;border-bottom:1px solid var(--line);margin-top:14px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+nav button{font:inherit;font-weight:600;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;white-space:nowrap}
+nav button[aria-selected="true"]{background:var(--navy);color:var(--bg);border-color:var(--navy)}
+:root:not([data-theme="dark"]) nav button[aria-selected="true"]{color:#fff}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+
+section{padding-top:20px;display:flex;flex-direction:column;gap:18px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:12px}
+.field{display:flex;flex-direction:column;gap:4px;flex:1 1 150px;min-width:0}
+label{font-size:.78rem;font-weight:600;color:var(--muted-text)}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:64px}
+.btn{font:inherit;font-weight:600;padding:9px 14px;border-radius:8px;border:1px solid var(--navy);background:var(--navy);color:#fff;cursor:pointer}
+:root[data-theme="dark"] .btn{color:#0b1322}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn{color:#0b1322}}
+.btn.ghost{background:transparent;color:var(--navy)}
+.btn.small{padding:5px 10px;font-size:.82rem}
+.btn.danger{border-color:var(--danger);color:var(--danger);background:transparent}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:.82rem;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--tint);border-color:var(--navy);color:var(--navy);font-weight:600}
+
+.group{display:flex;flex-direction:column;gap:10px}
+.group > .head{display:flex;flex-direction:column;gap:2px;border-left:4px solid var(--navy);padding-left:10px}
+.group.new > .head{border-color:var(--green)}
+.group.people > .head{border-color:var(--orange)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card .q{font-family:var(--font-mono);font-size:.76rem;color:var(--muted-text);overflow-wrap:anywhere;background:var(--bg);padding:6px 8px;border-radius:6px}
+.card .acts{display:flex;gap:8px;margin-top:auto;flex-wrap:wrap}
+.card a.btn{text-decoration:none;display:inline-block}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:8px}
+.stat{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:2px;cursor:pointer;font:inherit;color:var(--fg);text-align:left}
+.stat[aria-pressed="true"]{border-color:var(--navy);background:var(--tint)}
+.stat b{font-family:var(--font-mono);font-size:1.4rem;font-weight:500}
+.lead{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.lead.due{border-color:var(--orange)}
+.lead .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.pill{font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid var(--line)}
+.pill.due{border-color:var(--orange);color:var(--orange)}
+.pill.won{border-color:var(--green);color:var(--green)}
+.contact{font-family:var(--font-mono);font-size:.8rem;color:var(--muted-text);overflow-wrap:anywhere}
+.empty{border:1px dashed var(--line);border-radius:10px;padding:22px;text-align:center;color:var(--muted-text)}
+
+.script{display:flex;flex-direction:column;gap:8px}
+.script pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-family:var(--font-body);font-size:.9rem;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px}
+.notice{border-left:4px solid var(--orange);background:var(--tint);padding:10px 12px;border-radius:0 8px 8px 0;font-size:.88rem}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:.85rem;z-index:20}
+@media (prefers-reduced-motion:no-preference){.toast{animation:in .15s ease-out}@keyframes in{from{opacity:0}to{opacity:1}}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <span class="label">General Public Solutions Services</span>
+  <h1>GPSS Lead Desk</h1>
+  <p class="sub">Find prospects from free public sources, track every conversation, and send the next message in one tap. Nothing here scrapes or auto-sends, so your accounts stay safe.</p>
+  <span class="store" id="store">Loading storage…</span>
+  <div><button class="btn small" id="installBtn" hidden>Install app</button></div>
+</header>
+
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" aria-selected="true" data-tab="find">Find leads</button>
+  <button role="tab" aria-selected="false" data-tab="pipe">Pipeline <span id="dueBadge"></span></button>
+  <button role="tab" aria-selected="false" data-tab="msg">Messages</button>
+  <button role="tab" aria-selected="false" data-tab="setter">Setter</button>
+</nav>
+
+<!-- FIND -->
+<section id="tab-find">
+  <div class="panel">
+    <div class="row">
+      <div class="field"><label for="city">City or county</label><input id="city" placeholder="e.g. Rochester" autocomplete="off"></div>
+      <div class="field" style="flex-basis:90px"><label for="state">State</label><input id="state" placeholder="NY" maxlength="2" autocomplete="off"></div>
+      <div class="field"><label for="area">Area, neighborhood, or ZIP</label><input id="area" placeholder="e.g. 14604 or Park Ave" autocomplete="off"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="niche">Industry</label><input id="niche" placeholder="e.g. barbershop" autocomplete="off"></div>
+      <div class="field"><label for="kw">Keywords</label><input id="kw" placeholder="e.g. catering, wedding, vegan" autocomplete="off"></div>
+    </div>
+    <div class="chips" id="niches" aria-label="Industry shortcuts"></div>
+    <div class="row">
+      <div class="field"><label for="bizname">Business or owner name</label><input id="bizname" placeholder="e.g. Sunrise Barber Co" autocomplete="off"></div>
+      <div class="field"><label for="addr">Street address</label><input id="addr" placeholder="e.g. 12 Main St" autocomplete="off"></div>
+    </div>
+    <div class="row"><button type="button" class="btn ghost small" id="clearLookup">Clear area, keywords, name, and address</button></div>
+    <p class="muted" style="font-size:.88rem">Every box is optional and the searches below rewrite themselves as you type. Add a name or address and a section for that business appears at the top. Each button opens a real search in a new tab. Use name and address lookups for businesses and for owners in their business role, not to look up private individuals at home. You choose who to contact.</p>
+  </div>
+  <div id="finder"></div>
+</section>
+
+<!-- PIPELINE -->
+<section id="tab-pipe" hidden>
+  <div class="stats" id="stats"></div>
+  <div id="list" style="display:flex;flex-direction:column;gap:10px"></div>
+
+  <div class="panel">
+    <h2>Add a lead</h2>
+    <div class="row">
+      <div class="field"><label for="f-biz">Business</label><input id="f-biz"></div>
+      <div class="field"><label for="f-contact">Contact name</label><input id="f-contact"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="f-email">Email</label><input id="f-email" inputmode="email"></div>
+      <div class="field"><label for="f-phone">Phone</label><input id="f-phone" inputmode="tel"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="f-offer">Best-fit offer</label>
+        <select id="f-offer"><option>Directory listing</option><option>Card processing / POS</option><option>Business internet &amp; phone</option><option>Marketing / UGC</option><option>Food merchant &amp; delivery</option><option>Associate recruit</option><option>Home / property</option><option>Other</option></select></div>
+      <div class="field"><label for="f-source">Where you found them</label><input id="f-source" placeholder="Google Maps, LinkedIn, ribbon cutting…"></div>
+    </div>
+    <div class="field"><label for="f-notes">Notes</label><textarea id="f-notes"></textarea></div>
+    <div><button class="btn" id="addBtn">Add lead</button></div>
+  </div>
+
+  <div class="panel">
+    <h2>Paste a list</h2>
+    <p class="muted" style="font-size:.88rem">One lead per line: <span class="mono">Business | Contact | Email or phone</span>. Contact and the last field are optional.</p>
+    <textarea id="bulk" placeholder="Sunrise Barber Co | Marcus | marcus@example.com"></textarea>
+    <div class="row"><button class="btn ghost" id="bulkBtn">Add all</button><button class="btn ghost" id="csvBtn">Copy all as CSV</button></div>
+  </div>
+
+  <div class="panel">
+    <h2>Auto-import</h2>
+    <p class="muted" style="font-size:.88rem">Your nightly lead job saves new leads to a file. Paste that file's web address here, and the app adds anything new each time it opens. Leads you delete never come back.</p>
+    <div class="field"><label for="syncUrl">Leads file address</label><input id="syncUrl" inputmode="url" placeholder="https://raw.githubusercontent.com/you/repo/main/data/leads.csv"></div>
+    <label style="display:flex;gap:8px;align-items:center;font-size:.9rem;font-weight:500;color:var(--fg)"><input type="checkbox" id="syncAuto" style="width:auto"> Check automatically when I open the app</label>
+    <div class="row"><button class="btn" id="syncBtn">Sync now</button></div>
+    <span class="muted" id="syncStatus" style="font-size:.85rem">Not checked yet.</span>
+  </div>
+
+  <div class="panel">
+    <h2>Backup and import</h2>
+    <p class="muted" style="font-size:.88rem">Import a CSV from the Lead Finder tool, or restore a backup. Columns it understands: business, contact, email, phone, website, address, source, notes.</p>
+    <div class="row"><button class="btn ghost" id="backupBtn">Download backup</button><button class="btn ghost" id="exportCsvBtn">Download CSV</button><button class="btn" id="importBtn">Import file</button></div>
+    <input type="file" id="importFile" accept=".csv,.json,text/csv,application/json" hidden>
+  </div>
+</section>
+
+<!-- MESSAGES -->
+<section id="tab-msg" hidden>
+  <div class="panel">
+    <div class="row">
+      <div class="field"><label for="m-lead">Write to</label><select id="m-lead"></select></div>
+      <div class="field"><label for="m-me">Your name</label><input id="m-me" placeholder="Your name"></div>
+    </div>
+    <div class="notice"><b>Before you send.</b> Email needs your real name, address, and an opt-out line. Don't text anyone who hasn't agreed to texts. Say plainly that GPSS connects people with providers, and who provides what, before anyone commits.</div>
+  </div>
+  <div id="scripts" style="display:flex;flex-direction:column;gap:14px"></div>
+</section>
+
+<!-- SETTER -->
+<section id="tab-setter" hidden>
+  <div class="panel">
+    <h2>Appointment setter</h2>
+    <p class="muted" style="font-size:.88rem">Paste a lead's reply and get the best next message, aimed at a booked call. It offers real open times from your schedule below. It never sends anything. You review, copy, and send every message yourself.</p>
+    <div class="row">
+      <div class="field"><label for="s-lead">Lead</label><select id="s-lead"></select></div>
+      <div class="field"><label for="s-chan">Channel</label><select id="s-chan"><option value="email">Email</option><option value="text">Text message</option><option value="dm">Social DM</option></select></div>
+    </div>
+    <div class="field"><label for="s-reply">What they said (paste their reply)</label><textarea id="s-reply" placeholder="Leave empty to write a first ask or a follow-up nudge"></textarea></div>
+    <div class="row">
+      <div class="field"><label for="s-mode">If they have not replied yet</label><select id="s-mode"><option value="open">First ask for a call</option><option value="nudge">Follow-up nudge</option></select></div>
+    </div>
+    <div class="row"><button class="btn" id="sDraft">Draft my reply</button></div>
+    <div id="sWarn"></div>
+  </div>
+  <div id="sOut"></div>
+  <div class="panel">
+    <h2>Your availability</h2>
+    <div class="row">
+      <div class="field"><label for="s-me">Your name</label><input id="s-me" placeholder="Your name"></div>
+      <div class="field"><label for="s-link">Booking link</label><input id="s-link" autocomplete="off"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="s-len">Length</label><select id="s-len"><option value="15">15 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option></select></div>
+      <div class="field"><label for="s-type">Meeting type</label><select id="s-type"><option value="phone call">Phone call</option><option value="Zoom call">Zoom call</option><option value="in-person visit">In-person visit</option></select></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="s-start">Earliest hour (0 to 23)</label><input id="s-start" type="number" min="0" max="23"></div>
+      <div class="field"><label for="s-end">Latest end hour (1 to 24)</label><input id="s-end" type="number" min="1" max="24"></div>
+      <div class="field"><label for="s-notice">Notice needed (hours)</label><input id="s-notice" type="number" min="0" max="168"></div>
+    </div>
+    <div class="field"><label>Days you can meet</label><div class="chips" id="s-days"></div></div>
+    <p class="muted" id="sSlots" style="font-size:.86rem"></p>
+  </div>
+</section>
+</div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+(function(){
+var $=function(s){return document.querySelector(s)};
+var $$=function(s){return Array.prototype.slice.call(document.querySelectorAll(s))};
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function safeGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function safeSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+function toast(t){var el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(function(){el.hidden=true},1800)}
+function copy(text){
+  function fallback(){var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('Copied')}catch(e){toast('Press and hold to copy')}document.body.removeChild(ta)}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){toast('Copied')},fallback)}else fallback()
+}
+function today(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function addDays(n){var d=new Date();d.setDate(d.getDate()+n);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+
+/* ---------- tabs ---------- */
+var tabs=['find','pipe','msg','setter'];
+function showTab(t){
+  tabs.forEach(function(n){$('#tab-'+n).hidden=(n!==t)});
+  $$('nav button').forEach(function(b){b.setAttribute('aria-selected',String(b.dataset.tab===t))});
+  if(t==='msg')renderMsgs();
+  if(t==='setter')renderSetter();
+  window.scrollTo(0,0);
+}
+$$('nav button').forEach(function(b){b.addEventListener('click',function(){showTab(b.dataset.tab)})});
+
+/* ---------- finder ---------- */
+var NICHES=['restaurant','food truck','barbershop','hair salon','contractor','boutique','auto repair','daycare','cleaning service','real estate agent','trucking company','online store'];
+var niche0=safeGet('gpss.niche')||'';
+$('#niches').innerHTML=NICHES.map(function(n){return '<button type="button" class="chip" aria-pressed="false" data-n="'+esc(n)+'">'+esc(n)+'</button>'}).join('');
+['city','state','area','kw','bizname','addr'].forEach(function(id){$('#'+id).value=safeGet('gpss.'+id)||''});$('#niche').value=niche0;
+
+function g(q){return 'https://www.google.com/search?q='+encodeURIComponent(q)}
+function buildGroups(){
+  var cityRaw=$('#city').value.trim();
+  var city=cityRaw||'your city';
+  var st=$('#state').value.trim().toUpperCase();
+  var area=$('#area').value.trim(),kw=$('#kw').value.trim(),nm=$('#bizname').value.trim(),ad=$('#addr').value.trim();
+  var n=($('#niche').value.trim()||'small business')+(kw?' '+kw:'');
+  var place=cityRaw?(cityRaw+(st?', '+st:'')):st;
+  var loc=(area?area+', ':'')+city+(st?', '+st:'');
+  var groups=[];
+
+  if(nm||ad){
+    var look=[];
+    if(nm){
+      look.push({t:'Search the web',why:'Everything public about this business or owner.',q:'"'+nm+'"'+(place?' '+place:'')+(kw?' '+kw:''),url:null});
+      look.push({t:'Google Maps',why:'Hours, phone, reviews, and photos.',q:nm+' '+(ad||place),url:'https://www.google.com/maps/search/'+encodeURIComponent(nm+' '+(ad||place))});
+      look.push({t:'Facebook pages',why:'Many owners post updates and contact details here.',q:nm+(place?' '+place:''),url:'https://www.facebook.com/search/pages/?q='+encodeURIComponent(nm+(place?' '+place:''))});
+      look.push({t:'LinkedIn: company',why:'Check who runs it. Use your own account by hand.',q:nm,url:'https://www.linkedin.com/search/results/companies/?keywords='+encodeURIComponent(nm)});
+      look.push({t:'LinkedIn: owner or manager',why:'Find the decision-maker at this business.',q:nm+' owner'+(cityRaw?' '+cityRaw:''),url:'https://www.linkedin.com/search/results/people/?keywords='+encodeURIComponent(nm+' owner'+(cityRaw?' '+cityRaw:''))});
+      look.push({t:'Company registry (OpenCorporates)',why:'Official company records, status, and registered agent.',q:nm+(st?' ('+st+')':''),url:'https://opencorporates.com/companies?q='+encodeURIComponent(nm)+(st?'&jurisdiction_code=us_'+st.toLowerCase():'')+'&type=companies&utf8=%E2%9C%93'});
+      look.push({t:'Officers and agents (OpenCorporates)',why:'Who is listed as an officer or agent of the company.',q:nm,url:'https://opencorporates.com/officers?q='+encodeURIComponent(nm)+'&utf8=%E2%9C%93'});
+      look.push({t:'Business contact details',why:'Public business email or phone on their own pages.',q:'"'+nm+'" contact OR email OR phone'+(cityRaw?' '+cityRaw:''),url:null});
+    }
+    if(ad){
+      look.push({t:'Map this address',why:'See what is at this location.',q:ad+(place?' '+place:''),url:'https://www.google.com/maps/search/'+encodeURIComponent(ad+(place?' '+place:''))});
+      look.push({t:'Who operates here',why:'Businesses listed at this address.',q:'"'+ad+'" business OR LLC OR "now open"',url:null});
+    }
+    if(nm){look.push({t:'Save it to your pipeline',why:'Adds this business as a new lead so you can track follow-ups.',q:nm+(ad?' · '+ad:''),url:null,add:true})}
+    groups.push({k:'lookup',title:'This business or owner',sub:'Searches for the name and address you entered.',items:look});
+  }
+
+  var nw=[
+    {t:'Grand openings and ribbon cuttings',why:'Owners who just opened are choosing providers right now.',q:'"grand opening" OR "ribbon cutting" OR "now open" '+n+' '+loc,url:null},
+    {t:'Coming soon',why:'Businesses that have not opened yet need payments, internet, and marketing set up first.',q:'"coming soon" OR "opening soon" '+n+' '+loc,url:null},
+    {t:'New business licenses',why:'Cities and counties often publish newly issued licenses and permits.',q:loc+' new business licenses issued this month',url:null},
+    {t:'Chamber of commerce new members',why:'New members are listed with owner names and phone numbers.',q:loc+' chamber of commerce new members '+n,url:null},
+    {t:'State filings for new companies',why:'Secretary of State records show newly formed LLCs and corporations.',q:(st||'state')+' secretary of state business entity search new filings',url:null},
+    {t:'Newly registered companies (OpenCorporates)',why:'Free company registry search by name keyword. Sort by incorporation date.',q:n+(st?' ('+st+')':''),url:'https://opencorporates.com/companies?q='+encodeURIComponent(n)+(st?'&jurisdiction_code=us_'+st.toLowerCase():'')+'&type=companies&utf8=%E2%9C%93'},
+    {t:'Facebook announcements',why:'New owners announce openings on Facebook first.',q:'site:facebook.com "grand opening" '+n+' '+city,url:null}
+  ];
+  groups.push({k:'new',title:'New businesses',sub:'Early-stage owners with real setup needs.',items:nw});
+
+  var ex=[
+    {t:'Google Maps',why:'Look for listings with few reviews, no website, or outdated photos.',q:n+' in '+loc,url:'https://www.google.com/maps/search/'+encodeURIComponent(n+' in '+loc)},
+    {t:'Yelp',why:'Active owners who respond to reviews are easier to reach.',q:n+' near '+loc,url:'https://www.yelp.com/search?find_desc='+encodeURIComponent(n)+'&find_loc='+encodeURIComponent(loc)},
+    {t:'Better Business Bureau',why:'Listings include owner names and phone numbers.',q:n+' '+loc,url:'https://www.bbb.org/search?find_text='+encodeURIComponent(n)+'&find_loc='+encodeURIComponent(loc)},
+    {t:'Businesses with no website',why:'A direct opening for marketing and directory services.',q:n+' '+loc+' "facebook.com" -"www." -inurl:wix',url:null},
+    {t:'Local business directories',why:'Compare against the GPSS directory and invite them to list.',q:'"'+loc+'" '+n+' directory contact owner',url:null}
+  ];
+  groups.push({k:'ex',title:'Existing businesses',sub:'Established owners to review and approach.',items:ex});
+
+  var ppl=[
+    {t:'LinkedIn: owners and founders',why:'Opens LinkedIn people search. Use your own account by hand.',q:'owner '+n+' '+city,url:'https://www.linkedin.com/search/results/people/?keywords='+encodeURIComponent('owner '+n+' '+city)},
+    {t:'LinkedIn: companies',why:'Find small companies, then check who runs them.',q:n+' '+loc,url:'https://www.linkedin.com/search/results/companies/?keywords='+encodeURIComponent(n+' '+loc)},
+    {t:'Facebook pages',why:'Many small owners are only on Facebook.',q:n+' '+loc,url:'https://www.facebook.com/search/pages/?q='+encodeURIComponent(n+' '+loc)},
+    {t:'Instagram businesses',why:'Good for creators, food, beauty, and retail.',q:'site:instagram.com '+n+' '+city+' "DM" OR "orders"',url:null},
+    {t:'Owners with a public email',why:'Contact pages that list a direct address.',q:n+' '+loc+' "owner" "@gmail.com" OR "@yahoo.com"',url:null}
+  ];
+  groups.push({k:'people',title:'People and profiles',sub:'Reach the person who decides.',items:ppl});
+
+  var sig=[
+    {t:'Hiring (they are growing)',why:'A hiring owner has cash flow and needs.',q:n+' '+loc+' "now hiring"',url:null},
+    {t:'Frustrated with payments',why:'Public complaints about fees and holds are warm openings.',q:n+' owner "processing fees" OR "payment processor" '+city,url:null},
+    {t:'Looking for creators',why:'Brands asking for UGC or influencers are ready for the creator offer.',q:'"looking for" "content creators" OR "UGC" '+n+' '+city,url:null},
+    {t:'Pop-ups and vendor events',why:'Event vendors need card readers and promotion.',q:loc+' vendor market OR pop-up OR festival vendors '+n,url:null}
+  ];
+  groups.push({k:'sig',title:'Buying signals',sub:'Moments when an owner is open to help.',items:sig});
+  return groups;
+}
+function renderFinder(){
+  var gs=buildGroups();
+  $('#finder').innerHTML=gs.map(function(gr){
+    return '<div class="group '+gr.k+'"><div class="head"><h2>'+esc(gr.title)+'</h2><span class="muted" style="font-size:.88rem">'+esc(gr.sub)+'</span></div><div class="cards">'+
+    gr.items.map(function(it){
+      var url=it.url||g(it.q);
+      return '<div class="card"><h3>'+esc(it.t)+'</h3><p class="muted" style="font-size:.86rem">'+esc(it.why)+'</p><div class="q">'+esc(it.q)+'</div><div class="acts">'+(it.add?'<button class="btn small" data-addlead="1">Add lead</button>':'<a class="btn small" target="_blank" rel="noopener" href="'+esc(url)+'">Open search</a><button class="btn ghost small" data-copy="'+esc(it.q)+'">Copy query</button>')+'</div></div>'
+    }).join('')+'</div></div>'
+  }).join('');
+  $$('#finder [data-copy]').forEach(function(b){b.addEventListener('click',function(){copy(b.dataset.copy)})});
+  $$('#finder [data-addlead]').forEach(function(b){b.addEventListener('click',function(){
+    var nm=$('#bizname').value.trim();if(!nm)return;
+    save(mk({biz:nm,address:$('#addr').value.trim(),source:'Find leads lookup'}));toast('Added to your pipeline');
+  })});
+  $$('#niches .chip').forEach(function(c){c.setAttribute('aria-pressed',String(c.dataset.n===$('#niche').value.trim()))});
+}
+['city','state','area','niche','kw','bizname','addr'].forEach(function(id){$('#'+id).addEventListener('input',function(){safeSet('gpss.'+id,this.value);renderFinder()})});
+$('#clearLookup').addEventListener('click',function(){
+  ['area','kw','bizname','addr'].forEach(function(id){$('#'+id).value='';safeSet('gpss.'+id,'')});
+  renderFinder();
+});
+$('#niches').addEventListener('click',function(e){var b=e.target.closest('.chip');if(!b)return;$('#niche').value=b.dataset.n;safeSet('gpss.niche',b.dataset.n);renderFinder()});
+
+/* ---------- storage ---------- */
+var leads=[],mode='local',ref=null,pendingRender=false;
+function persistLocal(){safeSet('gpss.leads',JSON.stringify(leads))}
+function save(l){
+  if(mode==='cloud'){return ref.doc(l.id).set(l).catch(function(){toast('Could not save. Try again.')})}
+  var i=leads.findIndex(function(x){return x.id===l.id});if(i<0)leads.unshift(l);else leads[i]=l;persistLocal();renderPipe();return Promise.resolve()
+}
+function remove(id){
+  if(mode==='cloud'){return ref.doc(id).delete().catch(function(){toast('Could not delete.')})}
+  leads=leads.filter(function(x){return x.id!==id});persistLocal();renderPipe();return Promise.resolve()
+}
+function newId(){return 'l'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function mk(o){return {id:newId(),biz:o.biz||'',contact:o.contact||'',email:o.email||'',phone:o.phone||'',website:o.website||'',address:o.address||'',offer:o.offer||'Directory listing',source:o.source||'',notes:o.notes||'',stage:'New',next:addDays(0),created:today()}}
+
+function loadLocal(){
+  mode='local';
+  try{leads=JSON.parse(safeGet('gpss.leads')||'[]')}catch(e){leads=[]}
+  $('#store').textContent='Works offline. Leads are saved on this device. Use Backup to keep a copy.';
+  renderPipe();
+}
+
+/* ---------- pipeline ---------- */
+var STAGES=['New','Contacted','Replied','Meeting','Won','Lost'];
+var filter='Active';
+function isDue(l){return l.stage!=='Won'&&l.stage!=='Lost'&&l.next&&l.next<=today()}
+function renderPipe(){
+  var list=$('#list');
+  if(list.contains(document.activeElement)&&/TEXTAREA|INPUT/.test(document.activeElement.tagName)){pendingRender=true;return}
+  pendingRender=false;
+  var due=leads.filter(isDue).length;
+  $('#dueBadge').textContent=due?'('+due+' due)':'';
+  var counts={};STAGES.forEach(function(s){counts[s]=leads.filter(function(l){return l.stage===s}).length});
+  var active=leads.filter(function(l){return l.stage!=='Won'&&l.stage!=='Lost'}).length;
+  var chips=[['Active',active],['Due',due]].concat(STAGES.map(function(s){return [s,counts[s]]}));
+  $('#stats').innerHTML=chips.map(function(c){return '<button class="stat" data-f="'+c[0]+'" aria-pressed="'+(filter===c[0])+'"><span class="label">'+c[0]+'</span><b>'+c[1]+'</b></button>'}).join('');
+  $$('#stats .stat').forEach(function(b){b.addEventListener('click',function(){filter=b.dataset.f;renderPipe()})});
+  var shown=leads.filter(function(l){
+    if(filter==='Active')return l.stage!=='Won'&&l.stage!=='Lost';
+    if(filter==='Due')return isDue(l);
+    return l.stage===filter});
+  shown.sort(function(a,b){return (a.next||'9999').localeCompare(b.next||'9999')});
+  if(!shown.length){
+    list.innerHTML='<div class="empty">'+(leads.length?'No leads in this view.':'No leads yet. Find prospects on the first tab, then add them below or paste a list.')+'</div>';return}
+  list.innerHTML=shown.map(function(l){
+    var pills='<span class="pill">'+esc(l.stage)+'</span>'+(isDue(l)?'<span class="pill due">Due '+esc(l.next)+'</span>':'')+(l.stage==='Won'?'<span class="pill won">Won</span>':'')+(l.dnc?'<span class="pill due">Do not contact</span>':'');
+    var contactBits=[l.contact,l.email,l.phone,l.website,l.address].filter(Boolean).map(esc).join(' · ');
+    return '<div class="lead'+(isDue(l)?' due':'')+'" data-id="'+esc(l.id)+'">'+
+      '<div class="top"><div><h3>'+esc(l.biz||'Unnamed lead')+'</h3><div class="contact">'+(contactBits||'No contact yet')+'</div></div><div class="chips">'+pills+'</div></div>'+
+      '<div class="muted" style="font-size:.84rem">'+esc(l.offer)+(l.source?' · from '+esc(l.source):'')+'</div>'+
+      '<div class="row"><div class="field"><label>Stage</label><select data-k="stage">'+STAGES.map(function(s){return '<option'+(s===l.stage?' selected':'')+'>'+s+'</option>'}).join('')+'</select></div>'+
+      '<div class="field"><label>Next follow-up</label><input type="date" data-k="next" value="'+esc(l.next||'')+'"></div></div>'+
+      '<div class="field"><label>Notes</label><textarea data-k="notes">'+esc(l.notes)+'</textarea></div>'+
+      '<div class="row"><button class="btn small" data-a="msg">Write message</button><button class="btn small" data-a="book">Book meeting</button><button class="btn ghost small" data-a="snooze">Follow up in 3 days</button><button class="btn danger small" data-a="del">Delete</button></div></div>'
+  }).join('');
+}
+$('#list').addEventListener('change',function(e){
+  var el=e.target.closest('[data-k]');if(!el)return;
+  var card=el.closest('.lead');var l=leads.find(function(x){return x.id===card.dataset.id});if(!l)return;
+  var copyL=Object.assign({},l);copyL[el.dataset.k]=el.value;
+  if(el.dataset.k==='stage'&&!copyL.next&&copyL.stage!=='Won'&&copyL.stage!=='Lost')copyL.next=addDays(3);
+  if(el.dataset.k==='stage'&&copyL.stage==='Contacted')copyL.next=addDays(3);
+  save(copyL);
+});
+$('#list').addEventListener('focusout',function(){setTimeout(function(){if(pendingRender)renderPipe()},50)});
+$('#list').addEventListener('click',function(e){
+  var b=e.target.closest('[data-a]');if(!b)return;
+  var card=b.closest('.lead');var l=leads.find(function(x){return x.id===card.dataset.id});if(!l)return;
+  if(b.dataset.a==='msg'){selLead=l.id;showTab('msg');return}
+  if(b.dataset.a==='book'){setterLead=l.id;showTab('setter');return}
+  if(b.dataset.a==='snooze'){var c=Object.assign({},l);c.next=addDays(3);save(c);toast('Follow-up set for '+c.next);return}
+  if(b.dataset.a==='del'){
+    if(b.dataset.armed){remove(l.id)}else{b.dataset.armed='1';b.textContent='Tap again to delete';setTimeout(function(){if(b.isConnected){delete b.dataset.armed;b.textContent='Delete'}},2500)}
+  }
+});
+$('#addBtn').addEventListener('click',function(){
+  var biz=$('#f-biz').value.trim();
+  if(!biz){toast('Enter a business name');$('#f-biz').focus();return}
+  save(mk({biz:biz,contact:$('#f-contact').value.trim(),email:$('#f-email').value.trim(),phone:$('#f-phone').value.trim(),offer:$('#f-offer').value,source:$('#f-source').value.trim(),notes:$('#f-notes').value.trim()}));
+  ['f-biz','f-contact','f-email','f-phone','f-notes'].forEach(function(id){$('#'+id).value=''});
+  filter='Active';toast('Lead added');renderPipe();
+});
+$('#bulkBtn').addEventListener('click',function(){
+  var lines=$('#bulk').value.split('\n').map(function(s){return s.trim()}).filter(Boolean);
+  if(!lines.length){toast('Paste at least one line');return}
+  var chain=Promise.resolve();
+  lines.forEach(function(ln){
+    var p=ln.split('|').map(function(s){return s.trim()});
+    var o={biz:p[0],contact:p[1]||'',source:'Pasted list'};
+    var last=p[2]||'';if(last.indexOf('@')>-1)o.email=last;else o.phone=last;
+    var lead=mk(o);
+    chain=chain.then(function(){return save(lead)});
+  });
+  $('#bulk').value='';filter='Active';toast(lines.length+' leads added');
+});
+$('#csvBtn').addEventListener('click',function(){
+  var cols=['biz','contact','email','phone','website','address','offer','source','stage','next','notes','created'];
+  function q(v){v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+  var out=[cols.join(',')].concat(leads.map(function(l){return cols.map(function(c){return q(l[c])}).join(',')}));
+  copy(out.join('\n'));
+});
+
+/* ---------- messages ---------- */
+var selLead=null;
+var me0=safeGet('gpss.me')||'';$('#m-me').value=me0;
+$('#m-me').addEventListener('input',function(){safeSet('gpss.me',this.value);renderScripts()});
+$('#m-lead').addEventListener('change',function(){selLead=this.value;renderScripts()});
+function renderMsgs(){
+  var opts='<option value="">Example (fill in later)</option>'+leads.map(function(l){return '<option value="'+esc(l.id)+'"'+(l.id===selLead?' selected':'')+'>'+esc(l.biz||'Unnamed lead')+'</option>'}).join('');
+  $('#m-lead').innerHTML=opts;renderScripts();
+}
+function firstName(s){return (s||'').trim().split(/\s+/)[0]}
+var TPL=[
+ {t:'Email 1: Introduction',body:'Subject: Quick idea for {biz}\n\nHi {first},\n\nI came across {biz} and wanted to reach out. I am with General Public Solutions Services. We connect local owners with practical help: card processing and POS, business internet and phone, marketing, and creator-made content. We also run a free community directory where you can list {biz}, post promotions, and get a QR promo card.\n\nWould you like me to show you what a listing for {biz} would look like? It is free and takes about 10 minutes.\nhttps://generalpublicsolutions.com/directory\n\nThanks,\n{me}\nGeneral Public Solutions Services\n\nIf this is not a fit, reply "no thanks" and I will not follow up.'},
+ {t:'Email 2: Follow-up (day 3)',body:'Subject: Re: Quick idea for {biz}\n\nHi {first},\n\nFollowing up in case my note got buried. Owners usually tell us one of three things matters most: lowering payment costs, getting seen locally, or getting fresh social content without hiring an agency.\n\nWhich is closest for {biz}? I will send only what is relevant.\nhttps://generalpublicsolutions.com/business\n\nThanks,\n{me}'},
+ {t:'Email 3: Last note (day 8)',body:'Subject: Should I close the loop?\n\nHi {first},\n\nI have not heard back, so I will assume the timing is off and stop reaching out. If that changes, you can list {biz} free in our directory or request a consultation anytime:\nhttps://generalpublicsolutions.com/contact\n\nWishing {biz} a strong season,\n{me}'},
+ {t:'New business congratulations',body:'Hi {first},\n\nCongratulations on opening {biz}. Setting up a new business has a long list of moving parts. I am with General Public Solutions Services, and we help new owners with payments, phone and internet, and getting the word out locally. Our directory listing is free if you want a quick start.\n\nWant me to send details? No pressure either way.\n\n{me}\nhttps://generalpublicsolutions.com/directory'},
+ {t:'Social DM (short)',body:'Hi {first}, I like what {biz} is doing. I am with General Public Solutions Services. We have a free local business directory and help with payments and marketing. Want a link to see how a listing looks? Happy to drop it here. {me}'},
+ {t:'Call opener (15 seconds)',body:'Hi {first}, this is {me} with General Public Solutions Services. I know I am calling out of the blue. We help local owners with payments, phone and internet, and getting found locally. Do you have 30 seconds, or should I call back at a better time?\n\nIf yes: "What is the biggest headache in running {biz} right now?" Then listen, take notes, and match one offer to what they say.'}
+];
+var OBJ=[
+ {t:'"Not interested"',body:'Understood, thanks for telling me. If you ever want a free listing in our directory or a quick payment-cost check, the link is generalpublicsolutions.com. I will not follow up.'},
+ {t:'"How much is it?"',body:'The directory listing is free. For services like processing or telecom, pricing comes from the provider and depends on your volume and location. I will explain who provides the service and what it costs before you decide anything. What do you spend on processing or phone each month right now?'},
+ {t:'"I already have a provider"',body:'That is common, and I am not asking you to switch today. Many owners just want a second opinion on fees. If you send a recent statement, I can tell you honestly whether a change would save anything. If not, I will say so.'},
+ {t:'"Send me info"',body:'Happy to. So I send the right thing: are you most interested in lowering costs, getting more local customers, or content for social media? Here is the overview in the meantime: https://generalpublicsolutions.com/business'},
+ {t:'"Who are you? Is this legit?"',body:'Fair question. General Public Solutions Services LLC connects individuals, families, and owners with services and providers. We are not the provider for everything, and I will tell you who is before you commit. You can read about us and see our reviews at generalpublicsolutions.com, and ask me anything first.'}
+];
+function renderScripts(){
+  var l=leads.find(function(x){return x.id===selLead});
+  var me=$('#m-me').value.trim()||'[Your name]';
+  var map={biz:l&&l.biz?l.biz:'[Business]',first:l&&firstName(l.contact)?firstName(l.contact):'there',me:me};
+  function fill(s){return s.replace(/\{(biz|first|me)\}/g,function(_,k){return map[k]})}
+  function block(title,items){
+    return '<div class="group"><div class="head"><h2>'+title+'</h2></div>'+items.map(function(it,i){
+      return '<div class="panel script"><h3>'+esc(it.t)+'</h3><pre>'+esc(fill(it.body))+'</pre><div class="row"><button class="btn small" data-i="'+title[0]+i+'">Copy</button></div></div>'
+    }).join('')+'</div>'
+  }
+  $('#scripts').innerHTML=block('Outreach',TPL)+block('Replies',OBJ);
+  $$('#scripts [data-i]').forEach(function(b){b.addEventListener('click',function(){
+    var arr=b.dataset.i[0]==='O'?TPL:OBJ;var it=arr[+b.dataset.i.slice(1)];copy(fill(it.body));
+    if(l&&b.dataset.i[0]==='O'&&l.stage==='New'){var c=Object.assign({},l);c.stage='Contacted';c.next=addDays(3);save(c)}
+  })});
+}
+
+
+/* ---------- backup, import, install, offline ---------- */
+function download(name,text,type){
+  var blob=new Blob([text],{type:type});var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);document.body.removeChild(a)},500);
+}
+function csvText(){
+  var cols=['biz','contact','email','phone','website','address','offer','source','stage','next','notes','created'];
+  function q(v){v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+  return [cols.join(',')].concat(leads.map(function(l){return cols.map(function(c){return q(l[c])}).join(',')})).join('\n');
+}
+function parseCSV(text){
+  var rows=[],row=[],cur='',inQ=false;
+  for(var i=0;i<text.length;i++){
+    var c=text[i];
+    if(inQ){
+      if(c==='"'){if(text[i+1]==='"'){cur+='"';i++}else inQ=false}else cur+=c;
+    }else if(c==='"'){inQ=true}
+    else if(c===','){row.push(cur);cur=''}
+    else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cur);cur='';if(row.some(function(x){return x!==''}))rows.push(row);row=[]}
+    else cur+=c;
+  }
+  row.push(cur);if(row.some(function(x){return x!==''}))rows.push(row);
+  return rows;
+}
+var ALIASES={biz:['biz','business','business name','name','company'],contact:['contact','contact name','owner'],email:['email','e-mail'],phone:['phone','telephone','tel'],website:['website','url','web'],address:['address','street'],source:['source'],notes:['notes','note'],offer:['offer'],stage:['stage'],next:['next','next follow-up'],created:['created','added']};
+function loadSeen(){try{return JSON.parse(safeGet('gpss.seen')||'{}')||{}}catch(e){return {}}}
+function importRows(rows,opts){
+  opts=opts||{};
+  if(rows.length<2){if(!opts.quiet)toast('No rows found');return 0}
+  var head=rows[0].map(function(h){return h.trim().toLowerCase()});
+  var idx={};
+  Object.keys(ALIASES).forEach(function(k){
+    for(var i=0;i<head.length;i++){if(ALIASES[k].indexOf(head[i])>-1){idx[k]=i;break}}
+  });
+  if(idx.biz==null){if(!opts.quiet)toast('Need a business or name column');return 0}
+  var known={};leads.forEach(function(l){known[(l.biz||'').toLowerCase()+'|'+(l.phone||'')]=1});
+  var seen=loadSeen();
+  var added=0,chain=Promise.resolve();
+  rows.slice(1).forEach(function(r){
+    function v(k){return idx[k]!=null?(r[idx[k]]||'').trim():''}
+    var biz=v('biz');if(!biz)return;
+    var key=biz.toLowerCase()+'|'+v('phone');if(known[key]||(opts.sync&&seen[key]))return;known[key]=1;seen[key]=1;
+    var o=mk({biz:biz,contact:v('contact'),email:v('email'),phone:v('phone'),website:v('website'),address:v('address'),source:v('source')||'Imported',notes:v('notes'),offer:v('offer')||undefined});
+    if(STAGES.indexOf(v('stage'))>-1)o.stage=v('stage');
+    if(v('next'))o.next=v('next');
+    added++;chain=chain.then(function(){return save(o)});
+  });
+  safeSet('gpss.seen',JSON.stringify(seen));
+  return added;
+}
+$('#backupBtn').addEventListener('click',function(){download('gpss-lead-desk-backup-'+today()+'.json',JSON.stringify(leads,null,2),'application/json')});
+$('#exportCsvBtn').addEventListener('click',function(){download('gpss-leads-'+today()+'.csv',csvText(),'text/csv')});
+$('#importBtn').addEventListener('click',function(){$('#importFile').click()});
+$('#importFile').addEventListener('change',function(){
+  var f=this.files&&this.files[0];if(!f)return;
+  var reader=new FileReader();
+  reader.onload=function(){
+    var text=String(reader.result||'');var n=0;
+    try{
+      if(/\.json$/i.test(f.name)){
+        var arr=JSON.parse(text);if(!Array.isArray(arr))throw new Error('bad');
+        var known={};leads.forEach(function(l){known[l.id]=1});
+        arr.forEach(function(o){if(o&&o.biz&&!known[o.id]){o.id=o.id||newId();save(o);n++}});
+      }else{n=importRows(parseCSV(text.replace(/^﻿/,'')))}
+      toast(n+' leads imported');filter='Active';
+    }catch(e){toast('Could not read that file')}
+  };
+  reader.readAsText(f);this.value='';
+});
+
+var deferred=null;
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferred=e;$('#installBtn').hidden=false});
+$('#installBtn').addEventListener('click',function(){if(!deferred)return;deferred.prompt();deferred.userChoice.then(function(){deferred=null;$('#installBtn').hidden=true})});
+window.addEventListener('appinstalled',function(){$('#installBtn').hidden=true});
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){
+  var hadController=!!navigator.serviceWorker.controller,reloading=false;
+  navigator.serviceWorker.addEventListener('controllerchange',function(){
+    if(!hadController||reloading)return;reloading=true;toast('Updated. Reloading…');setTimeout(function(){location.reload()},700);
+  });
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(function(reg){
+      reg.update().catch(function(){});
+      document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')reg.update().catch(function(){})});
+    }).catch(function(){});
+  });
+}
+
+/* ---------- auto-import from the nightly lead file ---------- */
+$('#syncUrl').value=safeGet('gpss.syncUrl')||'data/leads.csv';
+$('#syncAuto').checked=safeGet('gpss.syncAuto')!=='0';
+$('#syncAuto').addEventListener('change',function(){safeSet('gpss.syncAuto',this.checked?'1':'0')});
+function syncNow(quiet){
+  var url=($('#syncUrl').value||'').trim();
+  if(!url){if(!quiet)toast('Enter the leads file address');return}
+  safeSet('gpss.syncUrl',url);
+  $('#syncStatus').textContent='Checking for new leads…';
+  fetch(url,{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.text()}).then(function(t){
+    var n=importRows(parseCSV(t.replace(/^﻿/,'')),{sync:true,quiet:true});
+    var when=new Date().toLocaleString();
+    $('#syncStatus').textContent='Last checked '+when+'. '+n+' new lead'+(n===1?'':'s')+' added.';
+    if(n){filter='Active';toast(n+' new leads added')}
+  }).catch(function(){
+    $('#syncStatus').textContent=quiet?'Could not check for new leads. You may be offline.':'Could not reach that address. Check the link and your connection.';
+  });
+}
+$('#syncBtn').addEventListener('click',function(){syncNow(false)});
+
+/* ---------- appointment setter ---------- */
+var setterLead=null,cur=null;
+var DAYN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+var SET={link:'https://generalpublicsolutions.com/appointments',len:'20',type:'phone call',days:[1,2,3,4,5],start:9,end:17,notice:24};
+try{var savedSet=JSON.parse(safeGet('gpss.setter')||'{}');Object.keys(savedSet).forEach(function(k){SET[k]=savedSet[k]})}catch(e){}
+function saveSetter(){safeSet('gpss.setter',JSON.stringify(SET))}
+function pad2(n){return String(n).padStart(2,'0')}
+function fmtSlot(d){return d.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})+' at '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}
+function toLocalInput(d){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+'T'+pad2(d.getHours())+':'+pad2(d.getMinutes())}
+function getSlots(n){
+  var out=[],days=SET.days||[];
+  if(!days.length)return out;
+  var s=Math.max(0,Math.min(23,+SET.start||9)),e=Math.max(s+1,Math.min(24,+SET.end||17));
+  var last=Math.floor(e-(+SET.len||20)/60);
+  var cands=[s+1,Math.floor((s+e)/2),last].filter(function(h,i,a){return h>=s&&h<=last&&a.indexOf(h)===i});
+  if(!cands.length)cands=[s];
+  var min=new Date(Date.now()+(+SET.notice||0)*3600000);
+  for(var i=0;i<30&&out.length<n;i++){
+    var d=new Date(min.getFullYear(),min.getMonth(),min.getDate()+i);
+    if(days.indexOf(d.getDay())<0)continue;
+    var order=cands.slice(out.length%cands.length).concat(cands.slice(0,out.length%cands.length));
+    var pick=null;
+    for(var j=0;j<order.length&&pick===null;j++){var t=new Date(d);t.setHours(order[j],0,0,0);if(t>=min)pick=t}
+    if(pick)out.push(pick);
+  }
+  return out;
+}
+function parseWhen(text){
+  var t=text.toLowerCase(),now=new Date(),day=null;
+  var names=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  var abbr=[/\bsun\b/,/\bmon\b/,/\btue(s)?\b/,/\bwed\b/,/\bthu(r|rs)?\b/,/\bfri\b/,/\bsat\b/];
+  function nextDow(i){var d=new Date(now.getFullYear(),now.getMonth(),now.getDate());var diff=(i-d.getDay()+7)%7;if(diff===0)diff=7;d.setDate(d.getDate()+diff);return d}
+  if(/\btomorrow\b/.test(t)){day=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1)}
+  else if(/\btoday\b/.test(t)){day=new Date(now.getFullYear(),now.getMonth(),now.getDate())}
+  else{for(var i=0;i<7&&!day;i++){if(new RegExp('\\b'+names[i]+'\\b').test(t)||abbr[i].test(t))day=nextDow(i)}}
+  var hr=null,mn=0,m=t.match(/\b(\d{1,2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)/);
+  if(m){hr=(+m[1])%12;if(/^p/.test(m[3]))hr+=12;mn=+(m[2]||0)}
+  else{m=t.match(/\bat (\d{1,2})(?::(\d{2}))?\b/);if(m){var h=+m[1];hr=(h>=1&&h<=6)?h+12:h;mn=+(m[2]||0)}}
+  if(hr==null||hr>23||mn>59||!day)return null;
+  day.setHours(hr,mn,0,0);return day;
+}
+var INTENTS={
+  open:{label:'First ask',why:'No reply yet, so this asks for a short call with real times.',follow:3},
+  nudge:{label:'Follow-up nudge',why:'They have not replied. One short, easy ask.',follow:4},
+  yes:{label:'Interested',why:'They sound open. Offer times and make it easy to say yes.',book:true,follow:2},
+  proposedtime:{label:'They proposed a time',why:'Confirm it right away and lock it in.',book:true,follow:1},
+  price:{label:'Asked about price',why:'Do not quote a number. Offer a free look at what they pay now.',book:true,follow:2},
+  already:{label:'Already has a provider',why:'Do not push a switch. Offer a no-pressure second opinion.',book:true,follow:3},
+  who:{label:'Asked who you are',why:'Answer plainly, then offer a short call.',book:true,follow:2},
+  busy:{label:'Not now',why:'Respect the timing and agree when to check back.',follow:14},
+  info:{label:'Wants information',why:'Send the overview and move toward a short call.',book:true,follow:3},
+  wrong:{label:'Wrong person',why:'Ask who the right contact is.',follow:3},
+  softno:{label:'Not interested',why:'Close politely and do not follow up.',close:true},
+  optout:{label:'Asked to stop',why:'Stop all contact and mark the lead Do not contact.',close:true,dnc:true},
+  other:{label:'Needs one question',why:'Not a clear signal. Ask one simple question and offer a call.',book:true,follow:2}
+};
+function detect(text){
+  var t=text.toLowerCase();
+  if(/\b(stop|unsubscribe|remove me|do not contact|don'?t contact|leave me alone|take me off)\b/.test(t)||/(quit|stop) (texting|calling|emailing|contacting)/.test(t))return 'optout';
+  if(/\bnot interested\b|\bno,? thanks?\b|\bno thank you\b|\bnot for me\b/.test(t))return 'softno';
+  if(/wrong (person|number)|not the (owner|right person|one)|doesn'?t work here|no longer (own|work)|i'?m just an? (employee|worker)/.test(t))return 'wrong';
+  if(/who (is this|are you)|is this (legit|real|a scam|spam)|how did you (get|find)|what company|what('?s| is) this (about|regarding|for)/.test(t))return 'who';
+  if(parseWhen(text))return 'proposedtime';
+  if(/how much|price|pricing|\bcost|\bfees?\b|\brates?\b|expensive|\$\d/.test(t))return 'price';
+  if(/already (have|use|work)|we use|happy with|current (provider|processor|vendor)|under contract|locked in|got someone/.test(t))return 'already';
+  if(/not now|too busy|\bbusy\b|\blater\b|next (month|week|year)|call me back|few weeks|after the (holiday|season|new year)|swamped|bad time/.test(t))return 'busy';
+  if(/send (me )?(some )?(info|information|details|more)|email me|more info|brochure|what do you (do|offer|sell)|tell me more/.test(t))return 'info';
+  if(/\byes\b|\byeah\b|\bsure\b|sounds good|interested|let'?s (talk|do|set|chat)|\bok(ay)?\b|works for me|i'?m (in|free|available)|available|schedule|\bbook\b|set (it )?up|what time|call me|go ahead|i can do/.test(t))return 'yes';
+  return 'other';
+}
+var TPL={
+  open:["I'm {me} with General Public Solutions Services. I help local owners check whether they're overpaying on card fees, phone and internet, and getting found locally. Do you have {len} minutes for a quick {type}? I can do {s1} or {s2}. The review is free.{opt}","it's {me} with General Public Solutions Services. Free {len}-min {type} to check your card fees and phone and internet costs? {s1} or {s2}?{opt}"],
+  nudge:["Following up on my note. Would {s1} or {s2} work for a quick {len}-minute {type}? If neither does, tell me a time that does and I'll fit it in.{opt}","following up. Would {s1} or {s2} work for a quick {type}?{opt}"],
+  yes:["Great. Here are a few times for a {len}-minute {type}:\n\n{slots}\n\nReply with the one that works, or pick your own time here: {link}","great! {slotline}? Or pick any time: {link}"],
+  proposedtime:["That works: {when}. I'll send a calendar invite for our {len}-minute {type}. If anything changes, just reply and we'll move it.","{when} works. I'll send an invite. Reply if anything changes."],
+  price:["Fair question. The directory listing is free. For services like card processing, phone, and internet, pricing comes from the provider and depends on your volume and location, so I won't guess. In {len} minutes I can look at what you pay now and tell you honestly whether there's anything to save. Would {s1} or {s2} work?","fair question. The directory listing is free. Other pricing comes from providers and depends on your setup, so I won't guess. {len} min to review what you pay now? {s1} or {s2}?"],
+  already:["That's common, and I'm not asking you to switch. Many owners just want a second opinion on what they pay. A {len}-minute look at a recent statement shows whether a change would help, and if it wouldn't, I'll say so. Would {s1} or {s2} work?","totally fine, no need to switch. Happy to give a free second opinion on what you pay. {s1} or {s2}?"],
+  who:["Fair question. I'm {me} with General Public Solutions Services LLC. We connect local owners with practical services and providers, like card payments, business internet and phone, marketing, and a free directory listing, and I always say who provides what before you commit. You can read about us at https://generalpublicsolutions.com. If it helps, I'm happy to do a short {type}: {s1} or {s2}?","fair question. I'm with General Public Solutions Services LLC (generalpublicsolutions.com). We connect local owners with providers and I always say who provides what. Happy to do a quick {type}: {s1} or {s2}?"],
+  busy:["No problem. When would be a better time for me to check back? I'll make a note. If it's easier, you can pick any time that suits you here: {link}","no problem. When should I check back? Or pick a time here: {link}"],
+  info:["Happy to. Here's a quick overview: https://generalpublicsolutions.com/business. So I send only what's relevant, is your priority lowering costs, getting more local customers, or content for social media? A {len}-minute {type} is the fastest way to get your questions answered: {s1} or {s2}?","happy to. Overview: https://generalpublicsolutions.com/business. What matters most: lower costs, more customers, or social content? Or a quick {type}: {s1} or {s2}?"],
+  wrong:["Thanks for letting me know. Who would be the best person to talk to about payments, phones, or marketing for {biz}? A name and email is plenty, and I appreciate the help.","thanks for telling me. Who's the best person at {biz} for payments, phones, or marketing? A name and email is plenty."],
+  softno:["Understood, thank you for telling me. If anything changes, you can list {biz} free in our directory at https://generalpublicsolutions.com/directory, or reach me anytime. I won't follow up.","understood, thanks for letting me know. I won't follow up. If anything changes, the directory listing is free: generalpublicsolutions.com/directory"],
+  optout:["Understood. I've removed you from my list and won't contact you again. Sorry for the bother.","understood. I've removed you and won't contact you again. Sorry for the bother."],
+  other:["Thanks for getting back to me. To make sure I'm useful, what matters most for {biz} right now: lowering costs, getting more customers, or something else? If it's easier to talk it through, I can do {s1} or {s2} for a {len}-minute {type}.","thanks for replying. What matters most for {biz}: lower costs, more customers, or something else? Or a quick {type}: {s1} or {s2}?"]
+};
+function fillTpl(str,ctx){return str.replace(/\{(\w+)\}/g,function(_,k){return ctx[k]!=null?ctx[k]:''})}
+function curLead(){return cur&&cur.leadId?leads.find(function(x){return x.id===cur.leadId}):null}
+function appendNote(old,add){return (old?old+'\n':'')+add}
+function setterWarn(){
+  var l=leads.find(function(x){return x.id===$('#s-lead').value});
+  var h='';
+  if(l&&l.dnc)h+='<div class="notice"><b>Do not contact.</b> This lead asked to be left alone. Do not send another message.</div>';
+  if($('#s-chan').value==='text')h+='<div class="notice"><b>Texting.</b> Only text people who agreed to texts. Include a way to opt out.</div>';
+  $('#sWarn').innerHTML=h;
+}
+function slotPreview(){
+  var s=getSlots(3);
+  $('#sSlots').textContent=s.length?'Times I will offer: '+s.map(fmtSlot).join('  |  '):'Choose at least one day you can meet.';
+}
+function renderSetter(){
+  var sel=$('#s-lead'),keep=setterLead||sel.value;
+  sel.innerHTML='<option value="">Example (no lead selected)</option>'+leads.map(function(l){return '<option value="'+esc(l.id)+'"'+(l.id===keep?' selected':'')+'>'+esc(l.biz||'Unnamed lead')+(l.dnc?' (do not contact)':'')+'</option>'}).join('');
+  $('#s-me').value=safeGet('gpss.me')||'';
+  $('#s-link').value=SET.link;$('#s-len').value=String(SET.len);$('#s-type').value=SET.type;
+  $('#s-start').value=SET.start;$('#s-end').value=SET.end;$('#s-notice').value=SET.notice;
+  $('#s-days').innerHTML=[1,2,3,4,5,6,0].map(function(d){return '<button type="button" class="chip" data-day="'+d+'" aria-pressed="'+(SET.days.indexOf(d)>-1)+'">'+DAYN[d]+'</button>'}).join('');
+  slotPreview();setterWarn();
+}
+function draftNow(){
+  var l=leads.find(function(x){return x.id===$('#s-lead').value})||null;
+  if(l&&l.dnc){toast('This lead asked not to be contacted');return}
+  var chan=$('#s-chan').value,reply=$('#s-reply').value.trim();
+  var id=reply?detect(reply):$('#s-mode').value;
+  var when=reply?parseWhen(reply):null,slots=getSlots(3);
+  var first=(l&&firstName(l.contact))||'there';
+  var me=$('#s-me').value.trim()||'[Your name]';
+  var ctx={biz:(l&&l.biz)||'your business',me:me,len:SET.len,type:SET.type,link:SET.link,
+    s1:slots[0]?fmtSlot(slots[0]):'[time]',s2:slots[1]?fmtSlot(slots[1]):(slots[0]?fmtSlot(slots[0]):'[time]'),
+    slots:slots.length?slots.map(function(d,i){return (i+1)+'. '+fmtSlot(d)}).join('\n'):'[set your available days below]',
+    slotline:slots.length?slots.map(fmtSlot).join(', or '):'[time]',
+    when:when?fmtSlot(when):'',
+    opt:chan==='text'?' Reply STOP to opt out.':' If you would rather not hear from me, just reply STOP.'};
+  var body=fillTpl(TPL[id][chan==='email'?0:1],ctx);
+  var text=chan==='email'?'Hi '+first+',\n\n'+body+'\n\nThanks,\n'+me:'Hi '+first+', '+body+' - '+me;
+  var def=when||slots[0]||null;
+  cur={id:id,leadId:l?l.id:null,when:def?toLocalInput(def):''};
+  var it=INTENTS[id];
+  var h='<div class="panel"><h2>'+esc(it.label)+'</h2><p class="muted" style="font-size:.9rem">'+esc(it.why)+'</p>'+
+    '<div class="field"><label for="sOutText">Suggested message. Edit it before you send.</label><textarea id="sOutText" style="min-height:170px">'+esc(text)+'</textarea></div>'+
+    '<div class="row"><button class="btn" data-sa="copy">Copy message</button>'+
+    (it.follow?'<button class="btn ghost" data-sa="snooze">Follow up in '+it.follow+' days</button>':'')+
+    (it.close?'<button class="btn danger" data-sa="close">'+(it.dnc?'Mark do not contact':'Mark not interested')+'</button>':'')+'</div>';
+  if(it.book){
+    h+='<div class="field"><label for="sWhen">Meeting date and time</label><input type="datetime-local" id="sWhen" value="'+esc(cur.when)+'"></div>'+
+      '<div class="row"><button class="btn ghost" data-sa="save">Save meeting to pipeline</button><button class="btn ghost" data-sa="ics">Download calendar invite</button></div>';
+  }
+  $('#sOut').innerHTML=h+'</div>';
+}
+function closeLead(l,dnc){
+  var c=Object.assign({},l);c.stage='Lost';c.next='';
+  if(dnc){c.dnc=true;c.notes=appendNote(c.notes,'Asked not to be contacted. Do not message again.')}
+  save(c);toast(dnc?'Marked do not contact':'Marked not interested');
+}
+function icsText(l,v){
+  var start=new Date(v),end=new Date(start.getTime()+(+SET.len||20)*60000);
+  function stamp(d){return d.getFullYear()+pad2(d.getMonth()+1)+pad2(d.getDate())+'T'+pad2(d.getHours())+pad2(d.getMinutes())+'00'}
+  function ics(s){return String(s).replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n')}
+  var name=(l&&l.biz)||'your lead';
+  return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//GPSS Lead Desk//EN','BEGIN:VEVENT',
+    'UID:'+Date.now().toString(36)+'@gpss-lead-desk','DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,''),
+    'DTSTART:'+stamp(start),'DTEND:'+stamp(end),
+    'SUMMARY:'+ics('GPSS '+SET.type+' with '+name),
+    'DESCRIPTION:'+ics('Meeting with '+name+((l&&l.contact)?' ('+l.contact+')':'')+((l&&l.phone)?'. Phone: '+l.phone:'')+((l&&l.email)?'. Email: '+l.email:'')),
+    'BEGIN:VALARM','TRIGGER:-PT15M','ACTION:DISPLAY','DESCRIPTION:Meeting reminder','END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
+}
+$('#sDraft').addEventListener('click',draftNow);
+$('#s-lead').addEventListener('change',function(){setterLead=this.value||null;setterWarn()});
+$('#s-chan').addEventListener('change',setterWarn);
+$('#sOut').addEventListener('click',function(e){
+  var b=e.target.closest('[data-sa]');if(!b||!cur)return;
+  var a=b.dataset.sa,l=curLead(),it=INTENTS[cur.id];
+  if(a==='copy'){
+    copy($('#sOutText').value);
+    if(l){
+      if(it.close){closeLead(l,it.dnc);return}
+      var c=Object.assign({},l);if(c.stage==='New')c.stage='Contacted';if(it.follow)c.next=addDays(it.follow);save(c);
+    }
+    return;
+  }
+  if(!l){toast('Pick a lead first');return}
+  if(a==='snooze'){var s=Object.assign({},l);s.next=addDays(it.follow||3);save(s);toast('Follow-up set for '+s.next);return}
+  if(a==='close'){closeLead(l,it.dnc);return}
+  var v=$('#sWhen')?$('#sWhen').value:'';
+  if(!v){toast('Pick a date and time');return}
+  if(a==='save'){
+    var m=Object.assign({},l);m.stage='Meeting';m.meeting=v;m.next=v.slice(0,10);
+    m.notes=appendNote(m.notes,'Meeting: '+fmtSlot(new Date(v))+' ('+SET.len+' min, '+SET.type+')');
+    save(m);toast('Meeting saved. Follow-up date set.');return;
+  }
+  if(a==='ics'){download('gpss-meeting-'+((l.biz||'lead').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''))+'.ics',icsText(l,v),'text/calendar')}
+});
+$('#s-me').addEventListener('input',function(){safeSet('gpss.me',this.value);$('#m-me').value=this.value});
+$('#s-link').addEventListener('input',function(){SET.link=this.value.trim();saveSetter()});
+['s-len','s-type'].forEach(function(id){$('#'+id).addEventListener('change',function(){SET[id==='s-len'?'len':'type']=this.value;saveSetter();slotPreview()})});
+[['s-start','start'],['s-end','end'],['s-notice','notice']].forEach(function(p){$('#'+p[0]).addEventListener('input',function(){
+  var n=parseInt(this.value,10);if(isNaN(n))return;SET[p[1]]=n;saveSetter();slotPreview();
+})});
+$('#s-days').addEventListener('click',function(e){
+  var b=e.target.closest('[data-day]');if(!b)return;
+  var d=+b.dataset.day,i=SET.days.indexOf(d);
+  if(i>-1)SET.days.splice(i,1);else SET.days.push(d);
+  b.setAttribute('aria-pressed',String(SET.days.indexOf(d)>-1));saveSetter();slotPreview();
+});
+
+renderFinder();loadLocal();
+if($('#syncAuto').checked&&/^https?:$/.test(location.protocol)&&navigator.onLine!==false){syncNow(true)}
+})();
+</script>
+</body>
+</html>

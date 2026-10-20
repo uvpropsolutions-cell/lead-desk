@@ -1,0 +1,40 @@
+{
+  "contact": "your-email@example.com",
+  "keep_days": 120,
+  "searches": [
+    {
+      "name": "Barbershops with no website",
+      "type": "osm",
+      "city": "Your City, ST",
+      "category": "barber",
+      "no_website": true,
+      "enabled": false
+    },
+    {
+      "name": "Restaurants",
+      "type": "osm",
+      "city": "Your City, ST",
+      "category": "restaurant",
+      "enabled": false
+    },
+    {
+      "name": "Grand openings",
+      "type": "rss",
+      "url": "PASTE-YOUR-GOOGLE-ALERTS-RSS-LINK-HERE",
+      "enabled": false
+    },
+    {
+      "name": "New business licenses",
+      "type": "socrata",
+      "url": "https://data.example.gov/resource/xxxx-xxxx.json",
+      "limit": 200,
+      "order": "license_date DESC",
+      "fields": {
+        "business": "business_name",
+        "phone": "phone_number",
+        "address": ["street_address", "city"]
+      },
+      "enabled": false
+    }
+  ]
+}
